@@ -12,7 +12,16 @@ app.use(express.json());
 
 // Home route:
 app.get('/', (req, res) => {
-    res.send('This is cool a book collection!');
+    res.send('<h1>This is cool a 📖book collection!</h1>');
+});
+// 404 route:
+app.use((req, res) => {
+    res.status(404).send(
+        `<div style=" padding-top: 20px; text-align:center;">
+        <h1 style="color: #ff735c">⚠️Page Not Found!</h1>
+        <a style="color:blue;" href='/'>Back Home</a>
+        </div>`
+    );
 });
 
 // URI:
