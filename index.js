@@ -14,15 +14,6 @@ app.use(express.json());
 app.get('/', (req, res) => {
     res.send('<h1>This is cool a 📖book collection!</h1>');
 });
-// 404 route:
-app.use((req, res) => {
-    res.status(404).send(
-        `<div style=" padding-top: 20px; text-align:center;">
-        <h1 style="color: #ff735c">⚠️Page Not Found!</h1>
-        <a style="color:blue;" href='/'>Back Home</a>
-        </div>`
-    );
-});
 
 // URI:
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.q1etiuc.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
@@ -41,9 +32,35 @@ async function run() {
         // Connect the client to the server	(optional starting in v4.7)
         await client.connect();
 
+        // Create jobsCollection:
+        const booksCollection = client.db('books-library').collection('books');
+
+        // Get all books
+        app.get('/allBooks', async (req, res) => {
+
+            const allBooks = await booksCollection.find().toArray();
+            res.send(allBooks);
+        });
+
+        // 404 route:
+        app.use((req, res) => {
+            res.status(404).send(
+                `<div style=" padding-top: 20px; text-align:center;">
+        <h1 style="color: #ff735c">⚠️Page Not Found!</h1>
+        <a style="color:blue;" href='/'>Back Home</a>
+        </div>`
+            );
+        });
+        
         // Send a ping to confirm a successful connection
         await client.db("admin").command({ ping: 1 });
-        console.log("Pinged your deployment. You successfully connected to MongoDB!");
+        console.log("✅ Connected to MongoDB!");
+
+        // Start server
+        app.listen(port, () => {
+            console.log(`🚀 Server is running on http://localhost:${port}`);
+        });
+
     } finally {
         // Ensures that the client will close when you finish/error
         // await client.close();
@@ -51,7 +68,3 @@ async function run() {
 }
 run().catch(console.dir);
 
-// Start server
-app.listen(port, () => {
-    console.log(`Server is running on http://localhost:${port}`);
-});
