@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId} = require('mongodb');
 require('dotenv').config();
 
 const app = express();
@@ -41,12 +41,43 @@ async function run() {
             const allBooks = await booksCollection.find().toArray();
             res.send(allBooks);
         });
+
+        // Get a single book by Id
+        app.get('/allBooks/:id', async (req, res) => {
+            const id = req.params.id;
+
+            try {
+                const book = await booksCollection.findOne({ _id: new ObjectId(id) });
+                res.send(book);
+            } catch (error) {
+                res.status(500).send({ error: 'Failed to fetch book' });
+            };
+        });
+
         // Insert book by Post
         app.post('/addBooks', async (req, res) => {
             const book = req.body;
 
             const newBook = await booksCollection.insertOne(book);
             res.send(newBook);
+        });
+
+        // Update book info by Patch
+        app.patch('/updateBook/:id', async (req, res) => {
+            const id = req.params.id;
+            const updatedBook = req.body;
+
+            try {
+                const filter = { _id: new ObjectId(id) };
+                const updatedDoc = {
+                    $set: updatedBook
+                };
+
+                const result = await booksCollection.updateOne(filter, updatedDoc);
+                res.send(result);
+            } catch (error) {
+                res.status(500).send({ error: "Failed to update book" });
+            };
         });
 
         // 404 route:
@@ -58,7 +89,7 @@ async function run() {
         </div>`
             );
         });
-        
+
         // Send a ping to confirm a successful connection
         await client.db("admin").command({ ping: 1 });
         console.log("✅ Connected to MongoDB!");
