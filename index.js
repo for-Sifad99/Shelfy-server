@@ -41,6 +41,13 @@ async function run() {
             const allBooks = await booksCollection.find().toArray();
             res.send(allBooks);
         });
+        // Insert book by Post
+        app.post('/addBooks', async (req, res) => {
+            const book = req.body;
+
+            const newBook = await booksCollection.insertOne(book);
+            res.send(newBook);
+        });
 
         // 404 route:
         app.use((req, res) => {
