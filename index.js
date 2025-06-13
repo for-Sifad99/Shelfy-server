@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const { MongoClient, ServerApiVersion, ObjectId} = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config();
 
 const app = express();
@@ -35,11 +35,38 @@ async function run() {
         // Create jobsCollection:
         const booksCollection = client.db('books-library').collection('books');
 
-        // Get all books
+        // Get all books with optional category + pagination
         app.get('/allBooks', async (req, res) => {
+            try {
+                const category = req.query.category;
+                const page = parseInt(req.query.page) || 1;
+                const limit = parseInt(req.query.limit) || 5;
 
-            const allBooks = await booksCollection.find().toArray();
-            res.send(allBooks);
+                const query = {};
+                if (category) {
+                    query.category = category;
+                }
+                const skip = (page - 1) * limit;
+
+                const totalBooks = await booksCollection.countDocuments(query);
+                const totalPages = Math.ceil(totalBooks / limit);
+
+                const books = await booksCollection
+                    .find(query)
+                    .skip(skip)
+                    .limit(limit)
+                    .toArray();
+
+                res.send({
+                    books,
+                    totalBooks,
+                    totalPages,
+                    currentPage: page
+                });
+
+            } catch (err) {
+                res.status(500).send({ message: "Server error" });
+            }
         });
 
         // Get a single book by Id
