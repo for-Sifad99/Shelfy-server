@@ -111,7 +111,7 @@ async function run() {
                 const bookIds = borrowedBooks.map(book => new ObjectId(book.bookId));
                 // Find all borrowed books with those bookIds from booksCollection
                 const books = await booksCollection.find({ _id: { $in: bookIds } }).toArray();
-                
+
                 // Merge borrowed info with book info
                 const booksWithInfo = books.map(book => {
                     const borrowedInfo = borrowedBooks.find(b => b.bookId === book._id.toString());
@@ -166,6 +166,14 @@ async function run() {
             } catch (error) {
                 res.status(500).send({ error: "Failed to update book" });
             };
+        });
+
+        // Delete Borrowed book by Id
+        app.delete('/deleteBorrowedBook/:id', (req, res) => {
+            const id = req.params.id;
+
+            const result = borrowedBooksCollection.deleteOne({ _id: new ObjectId(id) });
+            res.send(result);
         });
 
         // 404 route:
