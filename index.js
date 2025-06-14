@@ -90,13 +90,31 @@ async function run() {
             res.send(newBook);
         });
 
+        // Get all borrowed books
+        app.get('/borrowedBooks/:email', async (req, res) => {
+            const email = req.params.email;
+
+            try {
+                // Find all borrowed entries by this user
+                const borrowedBooks = await borrowedBooksCollection.find({ email }).toArray();
+                // Extract all bookId values
+                const bookIds = borrowedBooks.map(book => new ObjectId(book.bookId));
+                // Find all borrowed books with those bookIds from booksCollection
+                const books = await booksCollection.find({ _id: { $in: bookIds } }).toArray();
+                res.send(books);
+
+            } catch (error) {
+                return res.status(500).send({ error: 'Failed to fetch borrowed books' });
+            };
+        });
+
         // Insert Borrowed book inFo by Post
         app.post('/addBorrowedBookInfo', async (req, res) => {
             const borrowedInfo = req.body;
-            const {email, bookId} = borrowedInfo;
+            const { email, bookId } = borrowedInfo;
 
             // Check if the user has already borrowed this book
-            const alreadyBorrowed = await borrowedBooksCollection.findOne({email, bookId});
+            const alreadyBorrowed = await borrowedBooksCollection.findOne({ email, bookId });
             if (alreadyBorrowed) {
                 return res.status(400).send({ message: "You have already borrowed this book." });
             };
