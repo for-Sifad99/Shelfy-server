@@ -90,6 +90,16 @@ async function run() {
             res.send(newBook);
         });
 
+        // Ge all borrowed books info
+        app.get('/borrowedBooksInfo', async (req, res) => {
+            try {
+                const borrowedBooksInfo = await borrowedBooksCollection.find().toArray();
+                res.send(borrowedBooksInfo);
+            } catch (error) {
+                res.status(500).send({ error: 'Failed to fetch borrowed books info' });
+            };
+        });
+
         // Get all borrowed books
         app.get('/borrowedBooks/:email', async (req, res) => {
             const email = req.params.email;
@@ -101,8 +111,16 @@ async function run() {
                 const bookIds = borrowedBooks.map(book => new ObjectId(book.bookId));
                 // Find all borrowed books with those bookIds from booksCollection
                 const books = await booksCollection.find({ _id: { $in: bookIds } }).toArray();
-                res.send(books);
-
+                
+                // Merge borrowed info with book info
+                const booksWithInfo = books.map(book => {
+                    const borrowedInfo = borrowedBooks.find(b => b.bookId === book._id.toString());
+                    return {
+                        ...book,
+                        ...borrowedInfo
+                    };
+                });
+                res.send(booksWithInfo);
             } catch (error) {
                 return res.status(500).send({ error: 'Failed to fetch borrowed books' });
             };
