@@ -32,8 +32,9 @@ async function run() {
         // Connect the client to the server	(optional starting in v4.7)
         await client.connect();
 
-        // Create jobsCollection:
+        // Create BooksCollection:
         const booksCollection = client.db('books-library').collection('books');
+        const borrowedBooksCollection = client.db('books-library').collection('BorrowedBooksInfo');
 
         // Get all books with optional category + pagination
         app.get('/allBooks', async (req, res) => {
@@ -89,6 +90,27 @@ async function run() {
             res.send(newBook);
         });
 
+        // Insert Borrowed book inFo by Post
+        app.post('/addBorrowedBookInfo', async (req, res) => {
+            const borrowedInfo = req.body;
+            const {email, bookId} = borrowedInfo;
+
+            // Check if the user has already borrowed this book
+            const alreadyBorrowed = await borrowedBooksCollection.findOne({email, bookId});
+            if (alreadyBorrowed) {
+                return res.status(400).send({ message: "You have already borrowed this book." });
+            };
+
+            // Check if user has borrowed 3 books already
+            const totalBorrowed = await borrowedBooksCollection.countDocuments({ email });
+            if (totalBorrowed >= 3) {
+                return res.status(403).send({ message: "You can't borrow more than 3 books!" });
+            };
+
+            const newInfo = await borrowedBooksCollection.insertOne(borrowedInfo);
+            res.send(newInfo);
+        });
+
         // Update book info by Patch
         app.patch('/updateBook/:id', async (req, res) => {
             const id = req.params.id;
@@ -97,7 +119,10 @@ async function run() {
             try {
                 const filter = { _id: new ObjectId(id) };
                 const updatedDoc = {
-                    $set: updatedBook
+                    $set: {
+                        ...updatedBook,
+
+                    }
                 };
 
                 const result = await booksCollection.updateOne(filter, updatedDoc);
