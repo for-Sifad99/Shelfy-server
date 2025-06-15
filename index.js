@@ -2,6 +2,8 @@ const express = require('express');
 const cors = require('cors');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config();
+const admin = require("firebase-admin");
+const serviceAccount = require("./serviceAccountKey.json");
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -9,6 +11,28 @@ const port = process.env.PORT || 3000;
 // Middleware:
 app.use(cors());
 app.use(express.json());
+
+// Verify Admin
+admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount)
+});
+
+// Verify Firebase Token
+const verifyFbToken = async (req, res, next) => {
+    const authHeader = req.headers?.authorization;
+
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).send({ message: 'Unauthorized access!!' })
+    }
+    const token = authHeader.split(' ')[1];
+    try {
+        const decoded = await admin.auth().verifyIdToken(token);
+        req.decoded = decoded;
+        next();
+    } catch (error) {
+        return res.status(401).send({ message: 'Unauthorized access!!' })
+    };
+};
 
 // Home route:
 app.get('/', (req, res) => {
@@ -43,12 +67,25 @@ async function run() {
                 const page = parseInt(req.query.page) || 1;
                 const limit = parseInt(req.query.limit) || 5;
 
-                const query = {};
-                if (category) {
-                    query.category = category;
-                }
-                const skip = (page - 1) * limit;
+                // Query Setup
+                const query = category ? { category } : {};
 
+                // Token check only if category is not given
+                if (!category) {
+                    const authHeader = req.headers?.authorization;
+                    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+                        return res.status(401).send({ message: 'Unauthorized access!!' })
+                    };
+
+                    const token = authHeader.split(' ')[1];
+                    const decoded = await admin.auth().verifyIdToken(token);
+                    if (!decoded?.email) {
+                        return res.status(403).send({ message: 'Forbidden access!!' });
+                    };
+                    req.decoded = decoded;
+                };
+
+                const skip = (page - 1) * limit;
                 const totalBooks = await booksCollection.countDocuments(query);
                 const totalPages = Math.ceil(totalBooks / limit);
 
@@ -83,8 +120,13 @@ async function run() {
         });
 
         // Insert book by Post
-        app.post('/addBooks', async (req, res) => {
+        app.post('/addBooks', verifyFbToken, async (req, res) => {
             const book = req.body;
+
+            // Check if decoded email exists
+            if (!req.decoded?.email) {
+                return res.status(403).send({ message: 'Forbidden access!' });
+            };
 
             const newBook = await booksCollection.insertOne(book);
             res.send(newBook);
