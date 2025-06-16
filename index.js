@@ -68,21 +68,9 @@ async function run() {
                 const limit = parseInt(req.query.limit) || 5;
 
                 // Query Setup
-                const query = category ? { category } : {};
-
-                // Token check only if category is not given
-                if (!category) {
-                    const authHeader = req.headers?.authorization;
-                    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-                        return res.status(401).send({ message: 'Unauthorized access!!' })
-                    };
-
-                    const token = authHeader.split(' ')[1];
-                    const decoded = await admin.auth().verifyIdToken(token);
-                    if (!decoded?.email) {
-                        return res.status(403).send({ message: 'Forbidden access!!' });
-                    };
-                    req.decoded = decoded;
+                const query = {};
+                if (category) {
+                    query.category = category;
                 };
 
                 const skip = (page - 1) * limit;
@@ -104,7 +92,7 @@ async function run() {
 
             } catch (err) {
                 res.status(500).send({ message: "Server error" });
-            }
+            };
         });
 
         // Get a single book by Id
@@ -173,11 +161,6 @@ async function run() {
             const borrowedInfo = req.body;
             const { email, bookId } = borrowedInfo;
 
-            // Check if the user has already borrowed this book
-            const alreadyBorrowed = await borrowedBooksCollection.findOne({ email, bookId });
-            if (alreadyBorrowed) {
-                return res.status(400).send({ message: "You have already borrowed this book." });
-            };
 
             // Check if user has borrowed 3 books already
             const totalBorrowed = await borrowedBooksCollection.countDocuments({ email });
@@ -185,14 +168,25 @@ async function run() {
                 return res.status(403).send({ message: "You can't borrow more than 3 books!" });
             };
 
+            // Check if the user has already borrowed this book
+            const alreadyBorrowed = await borrowedBooksCollection.findOne({ email, bookId });
+            if (alreadyBorrowed) {
+                return res.status(400).send({ message: "You have already borrowed this book." });
+            };
+
             const newInfo = await borrowedBooksCollection.insertOne(borrowedInfo);
             res.send(newInfo);
         });
 
         // Update book info by Patch
-        app.patch('/updateBook/:id', async (req, res) => {
+        app.patch('/updateBook/:id',verifyFbToken, async (req, res) => {
             const id = req.params.id;
             const updatedBook = req.body;
+
+            // Check if decoded email exists
+            if (!req.decoded?.email) {
+                return res.status(403).send({ message: 'Forbidden access!' });
+            };
 
             try {
                 const filter = { _id: new ObjectId(id) };
