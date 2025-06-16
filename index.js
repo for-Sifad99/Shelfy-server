@@ -34,6 +34,14 @@ const verifyFbToken = async (req, res, next) => {
     };
 };
 
+// Check if decoded email exists
+const verifyTokenEmail = async (req, res, next) => {
+    if (!req.decoded?.email) {
+        return res.status(403).send({ message: 'Forbidden access!' });
+    };
+    next();
+}
+
 // Home route:
 app.get('/', (req, res) => {
     res.send('<h1>This is cool a 📖book collection!</h1>');
@@ -107,14 +115,20 @@ async function run() {
             };
         });
 
-        // Insert book by Post
-        app.post('/addBooks', verifyFbToken, async (req, res) => {
-            const book = req.body;
+        // Get top 10 rating books by sorting
+        app.get('/topRatingBooks', async (req, res) => {
+            const books = await booksCollection
+                .find()
+                .sort({ rating: -1 })
+                .limit(10)
+                .toArray();
 
-            // Check if decoded email exists
-            if (!req.decoded?.email) {
-                return res.status(403).send({ message: 'Forbidden access!' });
-            };
+            res.send(books);
+        });
+
+        // Insert book by Post
+        app.post('/addBooks', verifyFbToken, verifyTokenEmail, async (req, res) => {
+            const book = req.body;
 
             const newBook = await booksCollection.insertOne(book);
             res.send(newBook);
@@ -179,14 +193,9 @@ async function run() {
         });
 
         // Update book info by Patch
-        app.patch('/updateBook/:id',verifyFbToken, async (req, res) => {
+        app.patch('/updateBook/:id', verifyFbToken, verifyTokenEmail, async (req, res) => {
             const id = req.params.id;
             const updatedBook = req.body;
-
-            // Check if decoded email exists
-            if (!req.decoded?.email) {
-                return res.status(403).send({ message: 'Forbidden access!' });
-            };
 
             try {
                 const filter = { _id: new ObjectId(id) };
