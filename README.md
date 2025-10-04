@@ -1,79 +1,125 @@
-🛠️ Shelfy Backend – Library Management API
-Welcome to the Shelfy Backend, the server-side powerhouse behind the Shelfy Library Management System. It powers secure, efficient book management, user authentication, and borrowing logic for a school library!
+# 📚 Shelfy – Backend Server
+Welcome to the Shelfy Backend — the server-side of a full-stack Library Management System designed to simplify how books are added, updated, borrowed, and returned. Shelfy delivers seamless library operations and a smooth user experience through RESTful APIs.
 
 ---
 
-🌍 Live Server
-🔗 Server Live Link
+- **Live Site:** [Live Demo!](https://shelfy-book-server.vercel.app/)
 
 ---
 
-⚙️ Tech Stack Used
-Technology          | Description
-Node.js             | JavaScript runtime environment
-Express.js       	| Backend framework
-MongoDB 	        | NoSQL database
-Mongoose            | MongoDB ODM (if used)
-Firebase Admin SDK  | Token verification and security
-dotenv	            | Environment variable management
-CORS                | Cross-Origin Resource Sharing support
+## 🚀 Technologies Used
+
+- **Node.js**
+- **Express.js**
+- **MongoDB**
+- **Firebase for Authentication**
+- **dotenv for environment variables**
+- **CORS Middleware**
+- **ImgBB (image uploads)**
+- **TanStack Query (used on client for GET operations)**
 
 ---
 
-🔐 Authentication & Security
-✅ Firebase Admin Token Verification Middleware
-✅ Route protection using bearer token
-✅ Role-based access for admin functionalities
-✅ Sensitive data (API keys, DB credentials) secured using .env
- 
- ---
+## ✅ Key Features (Server-Side)
 
-📚 Main API Features
-🔓 Authentication
-# Token verification using Firebase Admin SDK
-# Only authenticated users can access protected routes
-
-📖 Books Management
-1. GET /allBooks – Paginated book list, filter by category
-2. GET /allBooks/:id – Get book by ID
-3. POST /addBooks – Add a new book (auth required)
-4. PATCH /updateBook/:id – Update book info (auth required)
-
-⭐ Top Rated Books
-5. GET /topRatingBooks – Get top 10 highest-rated books
-
-📦 Borrowing System
-6. GET /borrowedBooks/:email – User’s borrowed books
-7. POST /addBorrowedBookInfo – Borrow a book (limit 3 books per user)
-8. DELETE /deleteBorrowedBook/:id – Return a book
+- **User Authentication & Authorization** using JWT and Firebase. 
+- **JWT Protected Routes** to secure adding, updating, borrowing, and returning books.  
+- **Dynamic Book Filtering** by category, availability, and search query.  
+- **Borrow/Return Workflow** – track borrowed books and return dates.  
+- **Borrow Restriction** – prevent users from borrowing more than allowed.  
+- Quantity Control using **MongoDB $inc** operator for increment/decrement.    
+- **Pagination** Support for large book collections. 
 
 ---
 
-🔧 Environment Variables
-Make sure to create a .env file and include the following:
-# PORT=3000
-# DB_USER=your_mongo_username
-# DB_PASS=your_mongo_password
+🔄 API Endpoints Overview
+Only highlights — for full API details refer to the codebase
+
+## 🔑 Auth & User APIs
+
+| Method | Endpoint            | Auth              | Role  | Description                |
+| ------ | ------------------- | ----------------- | ----- | -------------------------- |
+| POST   | /users              | ✅ Firebase Token | Any   | Create/update user profile |
+| GET    | /users/:email       | ❌                | Any   | Get user by email          |
+| GET    | /all-users          | ✅ Firebase Token | Admin | Get all users              |
+| PATCH  | /users/:email       | ✅ Firebase Token | Any   | Update user fields         |
+| PATCH  | /users/admin/:email | ✅ Firebase Token | Admin | Make a user admin          |
+| POST   | /get-role           | ❌                | Any   | Get role by email          |
 
 ---
 
-🚀 How to Run Locally
-# Clone the repository
-git clone https://github.com/your-username/shelfy-server.git
-cd shelfy-server
+## 📝 Book APIs
 
-# Install dependencies
-npm install
-
-# Set up environment variables
-touch .env
-# Add your PORT, DB_USER, DB_PASS to .env
-
-# Run the server
-node server.js
+| Method | Endpoint          | Auth              | Role          | Description                                          |
+| ------ | ----------------- | ----------------- | ------------- | ---------------------------------------------------- |
+| POST   | /books            | ✅ Firebase Token | Any (limited) | Add a new book (private route)                       |
+| GET    | /books            | ❌                | Any           | Get all available books (search, filter, pagination) |
+| GET    | /books/:id        | ❌                | Any           | Get single book details                              |
+| PATCH  | /books/:id        | ✅ Firebase Token | Admin / Owner | Update book info                                     |
+| DELETE | /books/:id        | ✅ Firebase Token | Admin         | Delete book                                          |
+| POST   | /books/:id/borrow | ✅ Firebase Token | Any           | Borrow a book (decrement quantity)                   |
+| POST   | /books/:id/return | ✅ Firebase Token | Any           | Return a book (increment quantity)                   |
 
 ---
 
-👨‍💻 Author
-Developed by Sifad – a passionate MERN Stack Developer 🌟
-📫 Feedback or suggestions? Feel free to connect or open an issue on GitHub!
+## 📂 Category APIs
+
+| Method | Endpoint    | Auth              | Role  | Description             |
+| ------ | ----------- | ----------------- | ----- | ----------------------- |
+| GET    | /categories | ❌                | Any   | Get all book categories |
+| POST   | /categories | ✅ Firebase Token | Admin | Add new category        |
+
+---
+
+## ⚙️ Environment Variables
+
+You need to setup `.env`  .env file:
+
+```env
+# Server Port
+PORT=YOUR_PORT
+
+# Database Credentials
+DB_USER=YOUR_DB_USER
+DB_PASS=YOUR_DB_PASSWORD
+
+# Firebase Service Key (JSON or base64)
+FB_SERVICE_KEY=your_firebase_service_key_here
+(Replace your_firebase_service_key_here with your actual base64 Firebase service key)
+```
+
+---
+
+## 🛠️ Installation Guide
+
+Follow these steps to set up and run the Shelfy backend server locally:
+
+### 📦 Prerequisites
+
+- Node.js
+- MongoDB Atlas account (or local MongoDB setup)
+- ImgBB or Cloudinary account (for image uploads)
+
+## 🛠 Installation & Setup
+
+1. Clone the server repo
+   - git clone https://github.com/for-Sifad99/Shelfy-server.git
+
+2. Navigate to the project directory
+   - cd shelfy-server
+
+3. Install dependencies
+   - npm install
+
+4. Start the development server
+   - npm run dev
+
+---
+
+## 🔮 Future Updates
+
+This backend is just the beginning.  
+In the future, the project will be refactored into a full MVC (Model–View–Controller) pattern with all modules properly structured.  
+More secure and fully functional APIs will be added to improve performance, reliability, and scalability.
+
+Stay tuned for upcoming updates!
