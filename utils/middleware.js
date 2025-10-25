@@ -1,4 +1,5 @@
 const admin = require("firebase-admin");
+const { getCollections } = require("../config/database");
 
 // Verify Firebase Token
 const verifyFbToken = async (req, res, next) => {
@@ -25,7 +26,28 @@ const verifyTokenEmail = async (req, res, next) => {
     next();
 }
 
+// Check if user is admin
+const verifyAdmin = async (req, res, next) => {
+    const { usersCollection } = await getCollections();
+    const email = req.decoded?.email;
+    
+    if (!email) {
+        return res.status(403).send({ message: 'Forbidden access!' });
+    }
+    
+    try {
+        const user = await usersCollection.findOne({ email });
+        if (!user || user.role !== 'admin') {
+            return res.status(403).send({ message: 'Forbidden access! Admins only.' });
+        }
+        next();
+    } catch (error) {
+        return res.status(500).send({ message: 'Server error while verifying admin status' });
+    }
+}
+
 module.exports = {
     verifyFbToken,
-    verifyTokenEmail
+    verifyTokenEmail,
+    verifyAdmin
 };
