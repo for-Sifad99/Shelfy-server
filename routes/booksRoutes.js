@@ -8,7 +8,8 @@ const {
     getBookById, 
     getTopRatingBooks, 
     addBook, 
-    updateBook 
+    updateBook,
+    getTopUsersByBooks
 } = require('../controllers/booksController');
 
 // Get all books with optional category + pagination
@@ -19,6 +20,9 @@ router.get('/myBooks/:email', verifyFbToken, verifyTokenEmail, getBooksByUser);
 
 // Get books statistics for admin dashboard
 router.get('/booksStatistics', getBooksStatistics);
+
+// Get top users by books added
+router.get('/topUsersByBooks', getTopUsersByBooks);
 
 // Get a single book by Id
 router.get('/allBooks/:id', getBookById);

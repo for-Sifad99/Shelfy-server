@@ -150,6 +150,35 @@ const getTopRatingBooks = async (req, res) => {
     };
 };
 
+// Get top users by books added
+const getTopUsersByBooks = async (req, res) => {
+    try {
+        const { booksCollection } = await getCollections();
+        
+        // Aggregate books by author email and count them
+        const topUsers = await booksCollection.aggregate([
+            {
+                $group: {
+                    _id: "$authorEmail",
+                    booksCount: { $sum: 1 },
+                    authorName: { $first: "$authorName" }
+                }
+            },
+            {
+                $sort: { booksCount: -1 }
+            },
+            {
+                $limit: 10
+            }
+        ]).toArray();
+        
+        res.send(topUsers);
+    } catch (err) {
+        console.error("Error fetching top users by books:", err);
+        res.status(500).send({ message: "Server error" });
+    };
+};
+
 // Insert book by Post
 const addBook = async (req, res) => {
     try {
@@ -191,5 +220,6 @@ module.exports = {
     getBookById,
     getTopRatingBooks,
     addBook,
-    updateBook
+    updateBook,
+    getTopUsersByBooks
 };

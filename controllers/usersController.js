@@ -77,16 +77,20 @@ const updateUser = async (req, res) => {
 // Delete user by email
 const deleteUser = async (req, res) => {
     try {
-        const { usersCollection } = await getCollections();
+        const { usersCollection, booksCollection } = await getCollections();
         const { email } = req.params;
         
+        // First, delete all books added by this user
+        await booksCollection.deleteMany({ authorEmail: email });
+        
+        // Then, delete the user
         const result = await usersCollection.deleteOne({ email });
         
         if (result.deletedCount === 0) {
             return res.status(404).send({ message: 'User not found' });
         }
         
-        res.send({ message: 'User deleted successfully' });
+        res.send({ message: 'User and their books deleted successfully' });
     } catch (error) {
         res.status(500).send({ error: 'Failed to delete user' });
     }
