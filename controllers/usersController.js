@@ -1,3 +1,4 @@
+// User controller for handling user-related operations
 const { ObjectId } = require('mongodb');
 const { getCollections } = require('../config/database');
 
@@ -7,23 +8,30 @@ const createUser = async (req, res) => {
         const { usersCollection } = await getCollections();
         const userData = req.body;
         
+        // Validate required fields
+        if (!userData.email) {
+            return res.status(400).send({ message: 'Email is required' });
+        }
+        
         // Check if user already exists
         const existingUser = await usersCollection.findOne({ email: userData.email });
         if (existingUser) {
             return res.status(409).send({ message: 'User already exists' });
         }
         
-        // Add timestamp
-        const userWithTimestamp = {
+        // Set default role if not provided
+        const userWithDefaults = {
             ...userData,
+            role: userData.role || 'user',
             createdAt: new Date(),
             updatedAt: new Date()
         };
         
-        const result = await usersCollection.insertOne(userWithTimestamp);
+        const result = await usersCollection.insertOne(userWithDefaults);
         res.status(201).send(result);
     } catch (error) {
-        res.status(500).send({ error: 'Failed to create user' });
+        console.error("Failed to create user:", error);
+        res.status(500).send({ error: 'Failed to create user', details: error.message });
     }
 };
 
@@ -33,6 +41,11 @@ const getUserByEmail = async (req, res) => {
         const { usersCollection } = await getCollections();
         const { email } = req.params;
         
+        // Validate email parameter
+        if (!email) {
+            return res.status(400).send({ message: 'Email parameter is required' });
+        }
+        
         const user = await usersCollection.findOne({ email });
         if (!user) {
             return res.status(404).send({ message: 'User not found' });
@@ -40,7 +53,8 @@ const getUserByEmail = async (req, res) => {
         
         res.send(user);
     } catch (error) {
-        res.status(500).send({ error: 'Failed to fetch user' });
+        console.error("Failed to fetch user:", error);
+        res.status(500).send({ error: 'Failed to fetch user', details: error.message });
     }
 };
 
@@ -51,7 +65,13 @@ const updateUser = async (req, res) => {
         const { email } = req.params;
         const updateData = req.body;
         
-        // Add timestamp
+        // Validate email parameter
+        if (!email) {
+            return res.status(400).send({ message: 'Email parameter is required' });
+        }
+        
+        // Allow role changes when explicitly provided (for admin operations)
+        // Regular user updates should not include role changes for security
         const updateWithTimestamp = {
             $set: {
                 ...updateData,
@@ -70,7 +90,8 @@ const updateUser = async (req, res) => {
         
         res.send(result);
     } catch (error) {
-        res.status(500).send({ error: 'Failed to update user' });
+        console.error("Failed to update user:", error);
+        res.status(500).send({ error: 'Failed to update user', details: error.message });
     }
 };
 
@@ -79,6 +100,11 @@ const deleteUser = async (req, res) => {
     try {
         const { usersCollection, booksCollection } = await getCollections();
         const { email } = req.params;
+        
+        // Validate email parameter
+        if (!email) {
+            return res.status(400).send({ message: 'Email parameter is required' });
+        }
         
         // First, delete all books added by this user
         await booksCollection.deleteMany({ authorEmail: email });
@@ -92,7 +118,8 @@ const deleteUser = async (req, res) => {
         
         res.send({ message: 'User and their books deleted successfully' });
     } catch (error) {
-        res.status(500).send({ error: 'Failed to delete user' });
+        console.error("Failed to delete user:", error);
+        res.status(500).send({ error: 'Failed to delete user', details: error.message });
     }
 };
 
@@ -104,7 +131,8 @@ const getAllUsers = async (req, res) => {
         const users = await usersCollection.find().toArray();
         res.send(users);
     } catch (error) {
-        res.status(500).send({ error: 'Failed to fetch users' });
+        console.error("Failed to fetch users:", error);
+        res.status(500).send({ error: 'Failed to fetch users', details: error.message });
     }
 };
 

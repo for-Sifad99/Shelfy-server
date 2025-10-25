@@ -198,18 +198,38 @@ const updateBook = async (req, res) => {
         const { booksCollection } = await getCollections();
         const id = req.params.id;
         const updatedBook = req.body;
-
-        const filter = { _id: new ObjectId(id) };
-        const updatedDoc = {
-            $set: {
-                ...updatedBook,
-            }
+        
+        // Add timestamp for updates
+        const bookWithTimestamp = {
+            ...updatedBook,
+            updatedAt: new Date()
         };
 
-        const result = await booksCollection.updateOne(filter, updatedDoc);
+        const result = await booksCollection.updateOne(
+            { _id: new ObjectId(id) },
+            { $set: bookWithTimestamp }
+        );
+
+        if (result.matchedCount === 0) {
+            return res.status(404).send({ message: 'Book not found' });
+        }
+
         res.send(result);
     } catch (error) {
         res.status(500).send({ error: "Failed to update book" });
+    };
+};
+
+// Delete book by ID
+const deleteBook = async (req, res) => {
+    try {
+        const { booksCollection } = await getCollections();
+        const id = req.params.id;
+
+        const result = await booksCollection.deleteOne({ _id: new ObjectId(id) });
+        res.send(result);
+    } catch (error) {
+        res.status(500).send({ error: "Failed to delete book" });
     };
 };
 
@@ -221,5 +241,6 @@ module.exports = {
     getTopRatingBooks,
     addBook,
     updateBook,
-    getTopUsersByBooks
+    getTopUsersByBooks,
+    deleteBook
 };

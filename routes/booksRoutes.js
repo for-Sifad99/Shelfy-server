@@ -9,7 +9,8 @@ const {
     getTopRatingBooks, 
     addBook, 
     updateBook,
-    getTopUsersByBooks
+    getTopUsersByBooks,
+    deleteBook
 } = require('../controllers/booksController');
 
 // Get all books with optional category + pagination
@@ -35,5 +36,8 @@ router.post('/addBooks', verifyFbToken, verifyTokenEmail, addBook);
 
 // Update book info by Patch
 router.patch('/updateBook/:id', verifyFbToken, verifyTokenEmail, updateBook);
+
+// Delete book by ID
+router.delete('/deleteBook/:id', verifyFbToken, verifyTokenEmail, deleteBook);
 
 module.exports = router;
