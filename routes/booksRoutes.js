@@ -3,6 +3,8 @@ const router = express.Router();
 const { verifyFbToken, verifyTokenEmail } = require('../utils/middleware');
 const { 
     getAllBooks, 
+    getBooksByUser,
+    getBooksStatistics,
     getBookById, 
     getTopRatingBooks, 
     addBook, 
@@ -11,6 +13,12 @@ const {
 
 // Get all books with optional category + pagination
 router.get('/allBooks', getAllBooks);
+
+// Get books by user email with pagination
+router.get('/myBooks/:email', verifyFbToken, verifyTokenEmail, getBooksByUser);
+
+// Get books statistics for admin dashboard
+router.get('/booksStatistics', getBooksStatistics);
 
 // Get a single book by Id
 router.get('/allBooks/:id', getBookById);

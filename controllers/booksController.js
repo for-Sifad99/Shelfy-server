@@ -37,6 +37,89 @@ const getAllBooks = async (req, res) => {
     };
 };
 
+// Get books by user email with pagination
+const getBooksByUser = async (req, res) => {
+    try {
+        const { booksCollection } = await getCollections();
+        const email = req.params.email;
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 5;
+
+        // Query Setup - filter by author email (which is the user's email)
+        const query = { authorEmail: email };
+
+        const skip = (page - 1) * limit;
+        const totalBooks = await booksCollection.countDocuments(query);
+        const totalPages = Math.ceil(totalBooks / limit);
+
+        const books = await booksCollection
+            .find(query)
+            .skip(skip)
+            .limit(limit)
+            .toArray();
+
+        res.send({
+            books,
+            totalBooks,
+            totalPages,
+            currentPage: page
+        });
+
+    } catch (err) {
+        res.status(500).send({ message: "Server error" });
+    };
+};
+
+// Get books statistics for admin dashboard
+const getBooksStatistics = async (req, res) => {
+    try {
+        const { booksCollection, borrowedBooksCollection } = await getCollections();
+        
+        // Get total books count
+        const totalBooks = await booksCollection.countDocuments();
+        
+        // Get total unique books (distinct titles)
+        const uniqueBooks = await booksCollection.distinct('bookTitle');
+        const totalUniqueBooks = uniqueBooks.length;
+        
+        // Get total books in stock (sum of all quantities)
+        const booksInStock = await booksCollection.aggregate([
+            {
+                $group: {
+                    _id: null,
+                    totalStock: { $sum: "$quantity" }
+                }
+            }
+        ]).toArray();
+        const totalStock = booksInStock.length > 0 ? booksInStock[0].totalStock : 0;
+        
+        // Get total borrowed books
+        const totalBorrowed = await borrowedBooksCollection.countDocuments();
+        
+        // Get books by category
+        const booksByCategory = await booksCollection.aggregate([
+            {
+                $group: {
+                    _id: "$category",
+                    count: { $sum: 1 }
+                }
+            }
+        ]).toArray();
+        
+        res.send({
+            totalBooks,
+            totalUniqueBooks,
+            totalStock,
+            totalBorrowed,
+            booksByCategory
+        });
+
+    } catch (err) {
+        console.error("Error fetching books statistics:", err);
+        res.status(500).send({ message: "Server error" });
+    };
+};
+
 // Get a single book by Id
 const getBookById = async (req, res) => {
     try {
@@ -103,6 +186,8 @@ const updateBook = async (req, res) => {
 
 module.exports = {
     getAllBooks,
+    getBooksByUser,
+    getBooksStatistics,
     getBookById,
     getTopRatingBooks,
     addBook,
