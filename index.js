@@ -13,7 +13,6 @@ const serviceAccount = JSON.parse(decoded);
 
 const app = express();
 const server = http.createServer(app);
-const port = process.env.PORT || 3000;
 
 // CORS configuration
 const corsOptions = {
@@ -127,6 +126,13 @@ async function startServer() {
         // Connect to database
         await connectDB();
         
+        const port = process.env.PORT || 5000;
+        const host = '0.0.0.0';
+
+server.listen(port, host, () => {
+  console.log(`🚀 Server running on port ${port}`);
+});
+
         // Start server
         server.listen(port, () => {
             console.log(`🚀 Server is running on http://localhost:${port}`);
