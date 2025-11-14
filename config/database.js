@@ -18,7 +18,6 @@ async function connectDB() {
     try {
         // Connect the client to the server (optional starting in v4.7)
         await client.connect();
-        console.log("✅ Connected to MongoDB!");
         return client.db('books-library');
     } catch (error) {
         console.error("❌ Failed to connect to MongoDB:", error);
